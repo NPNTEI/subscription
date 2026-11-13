@@ -9,23 +9,29 @@
 <style>{% raw %}/*__CSS__*/{% endraw %}</style>
 </head>
 <body>
-<div class="backdrop" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="backdrop" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
 
-<main class="wrap">
-  <header class="top">
+<header class="top">
+  <div class="top-in">
     <div class="brand">
       <span class="logo" data-icon="shield"></span>
-      <span data-i18n="brand"></span>
+      <div class="brand-text">
+        <strong data-i18n="brand"></strong>
+        <span id="updated"></span>
+      </div>
     </div>
     <div class="top-actions">
+      <button class="icon-btn" id="btn-refresh" type="button" data-icon="refresh"></button>
       <div class="menu-host">
         <button class="icon-btn" id="btn-lang" type="button" data-icon="globe" aria-haspopup="true"></button>
         <div class="menu" id="lang-menu" hidden></div>
       </div>
       <button class="icon-btn" id="btn-theme" type="button"></button>
     </div>
-  </header>
+  </div>
+</header>
 
+<main class="wrap">
   <section class="card announce" id="announce" hidden>
     <span class="announce-icon" data-icon="bell"></span>
     <div class="announce-body">
@@ -34,105 +40,137 @@
     </div>
   </section>
 
-  <section class="card hero" id="hero">
-    <div class="hero-head">
-      <div class="who">
-        <span class="hello" data-i18n="account"></span>
-        <h1 id="username">—</h1>
-      </div>
-      <div class="chips">
-        <span class="chip status" id="status"></span>
-        <span class="chip ghost" id="online" hidden></span>
-      </div>
-    </div>
-
-    <div class="hero-main">
-      <div class="gauge">
-        <svg viewBox="0 0 120 120" aria-hidden="true">
-          <defs>
-            <linearGradient id="g-ring" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="var(--acc1)"/>
-              <stop offset="1" stop-color="var(--acc2)"/>
-            </linearGradient>
-          </defs>
-          <circle class="ring-track" cx="60" cy="60" r="52"/>
-          <circle class="ring-value" id="ring" cx="60" cy="60" r="52"/>
-        </svg>
-        <div class="gauge-center">
-          <span class="gauge-label" id="gauge-label"></span>
-          <strong id="gauge-value">—</strong>
-          <span class="gauge-unit" id="gauge-unit"></span>
+  <div class="grid">
+    <section class="card hero" id="hero">
+      <div class="hero-id">
+        <div class="avatar" id="avatar"></div>
+        <div class="who">
+          <span class="hello" data-i18n="account"></span>
+          <h1 id="username">—</h1>
+        </div>
+        <div class="chips">
+          <span class="chip status" id="status"></span>
+          <span class="chip ghost" id="online" hidden></span>
         </div>
       </div>
 
-      <div class="tiles">
-        <div class="tile">
-          <span class="tile-k" data-i18n="used"></span>
-          <span class="tile-v" id="t-used">—</span>
-          <span class="tile-s" id="t-used-sub"></span>
+      <div class="hero-main">
+        <div class="gauge" id="gauge">
+          <svg viewBox="0 0 140 140" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-ring" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="var(--acc1)"/>
+                <stop offset=".55" stop-color="var(--acc2)"/>
+                <stop offset="1" stop-color="var(--acc3)"/>
+              </linearGradient>
+            </defs>
+            <circle class="ring-ticks" cx="70" cy="70" r="65"/>
+            <circle class="ring-track" cx="70" cy="70" r="53"/>
+            <circle class="ring-value" id="ring" cx="70" cy="70" r="53"/>
+          </svg>
+          <div class="gauge-center">
+            <span class="gauge-label" data-i18n="remaining"></span>
+            <strong id="gauge-value">—</strong>
+            <span class="gauge-unit" id="gauge-unit"></span>
+            <span class="gauge-pct" id="gauge-pct" hidden></span>
+          </div>
         </div>
-        <div class="tile">
-          <span class="tile-k" id="t-exp-k"></span>
-          <span class="tile-v" id="t-exp">—</span>
-          <span class="tile-s" id="t-exp-sub"></span>
-        </div>
-        <div class="tile">
-          <span class="tile-k" data-i18n="reset"></span>
-          <span class="tile-v" id="t-reset">—</span>
-        </div>
-        <div class="tile">
-          <span class="tile-k" data-i18n="lifetime"></span>
-          <span class="tile-v" id="t-life">—</span>
+
+        <div class="hero-side">
+          <div class="meter">
+            <div class="meter-head"><span><i data-icon="data"></i><span data-i18n="mData"></span></span><b id="m-data-v"></b></div>
+            <div class="meter-bar"><i id="m-data"></i></div>
+          </div>
+          <div class="meter">
+            <div class="meter-head"><span><i data-icon="clock"></i><span data-i18n="mTime"></span></span><b id="m-time-v"></b></div>
+            <div class="meter-bar time"><i id="m-time"></i></div>
+          </div>
+
+          <div class="tiles">
+            <div class="tile">
+              <span class="tile-ic c1" data-icon="swap"></span>
+              <span class="tile-k" data-i18n="used"></span>
+              <span class="tile-v" id="t-used">—</span>
+              <span class="tile-s" id="t-used-sub"></span>
+            </div>
+            <div class="tile">
+              <span class="tile-ic c2" data-icon="calendar"></span>
+              <span class="tile-k" id="t-exp-k"></span>
+              <span class="tile-v" id="t-exp">—</span>
+              <span class="tile-s" id="t-exp-sub"></span>
+            </div>
+            <div class="tile">
+              <span class="tile-ic c3" data-icon="refresh"></span>
+              <span class="tile-k" data-i18n="reset"></span>
+              <span class="tile-v" id="t-reset">—</span>
+              <span class="tile-s" id="t-reset-sub"></span>
+            </div>
+            <div class="tile">
+              <span class="tile-ic c4" data-icon="chart"></span>
+              <span class="tile-k" data-i18n="lifetime"></span>
+              <span class="tile-v" id="t-life">—</span>
+              <span class="tile-s" id="t-life-sub"></span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="card" id="sec-sub">
-    <div class="card-head">
-      <h2 data-i18n="subLink"></h2>
-    </div>
-    <p class="hint" data-i18n="subHint"></p>
-    <div class="urlbox">
-      <code id="sub-url" dir="ltr"></code>
-    </div>
-    <div class="row-btns">
-      <button class="btn primary" id="sub-copy" type="button"><span data-icon="copy"></span><span data-i18n="copyLink"></span></button>
-      <button class="btn" id="sub-qr" type="button"><span data-icon="qr"></span><span data-i18n="qr"></span></button>
-    </div>
-  </section>
+    <section class="card" id="sec-sub">
+      <div class="card-head">
+        <h2><i class="h-ic" data-icon="link"></i><span data-i18n="subLink"></span></h2>
+      </div>
+      <div class="urlbox">
+        <code id="sub-url" dir="ltr"></code>
+      </div>
+      <div class="row-btns">
+        <button class="btn primary" id="sub-copy" type="button"><span data-icon="copy"></span><span data-i18n="copyLink"></span></button>
+        <button class="btn" id="sub-qr" type="button"><span data-icon="qr"></span><span data-i18n="qr"></span></button>
+      </div>
+      <ol class="steps">
+        <li><b></b><div><strong data-i18n="s1t"></strong><span data-i18n="s1d"></span></div></li>
+        <li><b></b><div><strong data-i18n="s2t"></strong><span data-i18n="s2d"></span></div></li>
+        <li><b></b><div><strong data-i18n="s3t"></strong><span data-i18n="s3d"></span></div></li>
+      </ol>
+    </section>
 
-  <section class="card" id="sec-apps" hidden>
-    <div class="card-head">
-      <h2 data-i18n="apps"></h2>
-    </div>
-    <p class="hint" data-i18n="appsHint"></p>
-    <div class="tabs" id="app-tabs"></div>
-    <div class="apps" id="app-list"></div>
-  </section>
+    <section class="card" id="sec-apps">
+      <div class="card-head">
+        <h2><i class="h-ic" data-icon="apps"></i><span data-i18n="apps"></span></h2>
+        <div class="tabs" id="app-tabs"></div>
+      </div>
+      <div class="apps" id="app-list"></div>
+    </section>
 
-  <section class="card" id="sec-links" hidden>
-    <div class="card-head">
-      <h2><span data-i18n="configs"></span> <span class="count" id="links-count"></span></h2>
-      <button class="btn small" id="links-copy-all" type="button"><span data-icon="copy"></span><span data-i18n="copyAll"></span></button>
-    </div>
-    <div class="links" id="link-list"></div>
-    <button class="btn block ghost" id="links-more" type="button" hidden></button>
-  </section>
+    <section class="card" id="sec-links" hidden>
+      <div class="card-head">
+        <h2><i class="h-ic" data-icon="server"></i><span data-i18n="configs"></span> <span class="count" id="links-count"></span></h2>
+        <button class="btn small" id="links-copy-all" type="button"><span data-icon="copy"></span><span data-i18n="copyAll"></span></button>
+      </div>
+      <div class="links" id="link-list"></div>
+      <button class="btn block ghost" id="links-more" type="button" hidden></button>
+    </section>
 
-  <section class="card" id="sec-usage">
-    <div class="card-head">
-      <h2 data-i18n="usage"></h2>
-      <div class="seg" id="range"></div>
-    </div>
-    <div class="usage-total"><span data-i18n="usageTotal"></span> <strong id="usage-total">—</strong></div>
-    <div class="chart" id="chart"></div>
-    <div class="chart-axis" id="chart-axis"></div>
-  </section>
+    <section class="card" id="sec-usage">
+      <div class="card-head">
+        <h2><i class="h-ic" data-icon="chart"></i><span data-i18n="usage"></span></h2>
+        <div class="seg" id="range"></div>
+      </div>
+      <div class="kpis">
+        <div><span data-i18n="kTotal"></span><strong id="k-total">—</strong></div>
+        <div><span data-i18n="kAvg"></span><strong id="k-avg">—</strong></div>
+        <div><span data-i18n="kPeak"></span><strong id="k-peak">—</strong></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-grid" id="chart-grid"></div>
+        <div class="chart" id="chart"></div>
+      </div>
+      <div class="chart-axis" id="chart-axis"></div>
+    </section>
+  </div>
 
   <footer class="foot">
     <a class="btn" id="support" target="_blank" rel="noopener noreferrer" hidden><span data-icon="chat"></span><span data-i18n="support"></span></a>
-    <span class="foot-note" id="updated"></span>
   </footer>
 </main>
 

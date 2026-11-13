@@ -1,5 +1,6 @@
 import qrcode from 'qrcode-generator';
 import { I18N, LANGS } from './i18n.js';
+import { DEFAULT_APPS } from './apps.js';
 
 qrcode.stringToBytes = (s) => Array.from(new TextEncoder().encode(s));
 
@@ -18,6 +19,15 @@ const ICONS = {
   bell: svg('<path d="M6 16.500V11a6 6 0 1 1 12 0v5.500l1.500 2h-15z"/><path d="M10 21h4"/>'),
   chat: svg('<path d="M4 5.500h16v11H9.500L5.500 20v-3.500H4z"/>'),
   down: svg('<path d="M12 4v11M7.500 11l4.500 4.500 4.500-4.500M5 20h14"/>'),
+  refresh: svg('<path d="M20 11a8 8 0 0 0-14.500-4M4 13a8 8 0 0 0 14.500 4"/><path d="M5 3.500V7h3.500M19 20.500V17h-3.500"/>'),
+  data: svg('<ellipse cx="12" cy="6" rx="7.500" ry="3"/><path d="M4.500 6v6c0 1.700 3.400 3 7.500 3s7.500-1.300 7.500-3V6M4.500 12v6c0 1.700 3.400 3 7.500 3s7.500-1.300 7.500-3v-6"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5.500l3.500 2"/>'),
+  swap: svg('<path d="M7 4v15M3.500 15.500L7 19l3.500-3.500M17 20V5M13.500 8.500L17 5l3.500 3.500"/>'),
+  calendar: svg('<rect x="3.500" y="5" width="17" height="15.500" rx="3"/><path d="M3.500 10h17M8 3v4M16 3v4"/>'),
+  chart: svg('<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>'),
+  link: svg('<path d="M10 14a4.500 4.500 0 0 0 6.400 0l3-3a4.500 4.500 0 0 0-6.400-6.400l-1 1"/><path d="M14 10a4.500 4.500 0 0 0-6.400 0l-3 3a4.500 4.500 0 0 0 6.400 6.400l1-1"/>'),
+  apps: svg('<rect x="3.500" y="3.500" width="7" height="7" rx="2"/><rect x="13.500" y="3.500" width="7" height="7" rx="2"/><rect x="3.500" y="13.500" width="7" height="7" rx="2"/><rect x="13.500" y="13.500" width="7" height="7" rx="2"/>'),
+  server: svg('<rect x="3.500" y="4" width="17" height="7" rx="2.500"/><rect x="3.500" y="13" width="17" height="7" rx="2.500"/><path d="M7.500 7.500h.01M7.500 16.500h.01"/>'),
   bolt: svg('<path d="M13 3L5 13.500h6L10 21l8-10.500h-6z"/>'),
 };
 
@@ -53,7 +63,8 @@ const links = (Array.isArray(boot.links) ? boot.links : [])
   .filter((l) => typeof l === 'string')
   .map((l) => l.trim())
   .filter((l) => /^[a-z][a-z0-9+.-]*:\/\/\S+/i.test(l));
-const apps = (Array.isArray(boot.apps) ? boot.apps : []).filter((a) => a && a.name);
+const panelApps = (Array.isArray(boot.apps) ? boot.apps : []).filter((a) => a && a.name);
+const apps = panelApps.length ? panelApps : DEFAULT_APPS;
 
 const basePath = location.pathname.replace(/\/+$/, '').replace(/\/info$/, '');
 const subUrl = location.origin + basePath;
@@ -220,16 +231,20 @@ function closeQr() {
 }
 
 /* ---------- hero ---------- */
-const RING = 2 * Math.PI * 52;
+const RING = 2 * Math.PI * 53;
+const clamp = (n) => Math.max(0, Math.min(100, n));
 
 function renderHero() {
   const u = user || {};
-  $('username').textContent = u.username || '—';
+  const name = u.username || '—';
+  $('username').textContent = name;
+  $('avatar').textContent = name.replace(/[^\p{L}\p{N}]/gu, '').slice(0, 2).toUpperCase() || '•';
 
   const status = enumName(u.status, 'active');
   const chip = $('status');
   chip.className = `chip status s-${status}`;
   chip.textContent = t(`st_${status}`);
+  $('hero').setAttribute('data-status', status);
 
   const online = toDate(u.online_at);
   const onl = $('online');
@@ -240,54 +255,90 @@ function renderHero() {
     onl.textContent = live ? t('online') : t('lastSeen', { t: relative(online) });
   } else onl.hidden = true;
 
+  /* data */
   const used = Number(u.used_traffic) || 0;
   const limit = Number(u.data_limit) || 0;
   const ring = $('ring');
   ring.style.strokeDasharray = RING;
+  const pctChip = $('gauge-pct');
   if (limit > 0) {
-    const pct = Math.min(100, (used / limit) * 100);
+    const pct = clamp((used / limit) * 100);
     const left = bytes(Math.max(0, limit - used));
-    $('gauge-label').textContent = t('remaining');
+    const level = pct >= 90 ? 'high' : pct >= 70 ? 'mid' : 'ok';
+    $('gauge').classList.remove('inf');
     $('gauge-value').textContent = left.value;
     $('gauge-unit').textContent = left.unit;
+    pctChip.hidden = false;
+    pctChip.textContent = t('pctUsed', { n: num(pct) });
     ring.style.strokeDashoffset = RING * (pct / 100);
-    ring.setAttribute('data-level', pct >= 90 ? 'high' : pct >= 70 ? 'mid' : 'ok');
+    ring.setAttribute('data-level', level);
+    $('m-data').style.width = `${pct}%`;
+    $('m-data').parentNode.setAttribute('data-level', level);
+    $('m-data').parentNode.classList.remove('inf');
+    $('m-data-v').textContent = `${bytesText(used)} / ${bytesText(limit)}`;
     $('t-used-sub').textContent = t('ofTotal', { total: bytesText(limit) });
   } else {
-    $('gauge-label').textContent = t('remaining');
+    $('gauge').classList.add('inf');
     $('gauge-value').textContent = '∞';
     $('gauge-unit').textContent = t('unlimited');
+    pctChip.hidden = true;
     ring.style.strokeDashoffset = 0;
     ring.setAttribute('data-level', 'ok');
+    $('m-data').style.width = '100%';
+    $('m-data').parentNode.setAttribute('data-level', 'ok');
+    $('m-data').parentNode.classList.add('inf');
+    $('m-data-v').textContent = t('unlimited');
     $('t-used-sub').textContent = t('noLimit');
   }
   $('t-used').textContent = bytesText(used);
 
+  /* time */
   const exp = toDate(u.expire);
+  const created = toDate(u.created_at);
   const hold = Number(u.on_hold_expire_duration) || 0;
+  const timeBar = $('m-time');
+  const expV = $('t-exp');
+  expV.classList.remove('warn', 'bad');
+  timeBar.parentNode.classList.remove('inf');
   $('t-exp-k').textContent = t(status === 'on_hold' ? 'duration' : 'expiry');
   if (status === 'on_hold' && hold > 0) {
     const days = Math.floor(hold / 86400);
-    $('t-exp').textContent = days >= 1
+    const txt = days >= 1
       ? t('daysLeft', { n: num(days) })
       : t('hoursLeft', { n: num(Math.max(1, Math.round(hold / 3600))) });
+    expV.textContent = txt;
     $('t-exp-sub').textContent = t('afterFirstUse');
+    $('m-time-v').textContent = txt;
+    timeBar.style.width = '0%';
   } else if (exp) {
     const ms = exp - Date.now();
-    if (ms <= 0) $('t-exp').textContent = t('expiredAgo');
-    else if (ms < 86400000) $('t-exp').textContent = t('hoursLeft', { n: num(Math.max(1, Math.ceil(ms / 3600000))) });
-    else $('t-exp').textContent = t('daysLeft', { n: num(Math.ceil(ms / 86400000)) });
-    $('t-exp').classList.toggle('warn', ms > 0 && ms < 3 * 86400000);
-    $('t-exp').classList.toggle('bad', ms <= 0);
+    let txt;
+    if (ms <= 0) txt = t('expiredAgo');
+    else if (ms < 86400000) txt = t('hoursLeft', { n: num(Math.max(1, Math.ceil(ms / 3600000))) });
+    else txt = t('daysLeft', { n: num(Math.ceil(ms / 86400000)) });
+    expV.textContent = txt;
+    expV.classList.toggle('warn', ms > 0 && ms < 3 * 86400000);
+    expV.classList.toggle('bad', ms <= 0);
     $('t-exp-sub').textContent = t('until', { date: dateText(exp) });
+    $('m-time-v').textContent = ms > 86400000 ? t('daysRemain', { n: num(Math.ceil(ms / 86400000)) }) : txt;
+    const span = created && exp > created ? exp - created : 30 * 86400000;
+    const tp = clamp(100 - (ms / span) * 100);
+    timeBar.style.width = `${tp}%`;
+    timeBar.parentNode.setAttribute('data-level', ms <= 0 || tp >= 90 ? 'high' : tp >= 75 ? 'mid' : 'ok');
   } else {
-    $('t-exp').textContent = t('unlimited');
-    $('t-exp-sub').textContent = '';
+    expV.textContent = t('unlimited');
+    $('t-exp-sub').textContent = created ? t('since', { date: dateText(created) }) : '';
+    $('m-time-v').textContent = t('unlimited');
+    timeBar.style.width = '100%';
+    timeBar.parentNode.setAttribute('data-level', 'ok');
+    timeBar.parentNode.classList.add('inf');
   }
 
   const strategy = enumName(u.data_limit_reset_strategy, 'no_reset');
   $('t-reset').textContent = t(`reset_${strategy}`);
+  $('t-reset-sub').textContent = t(strategy === 'no_reset' ? 'noReset' : 'nextReset');
   $('t-life').textContent = bytesText(Math.max(Number(u.lifetime_used_traffic) || 0, used));
+  $('t-life-sub').textContent = created ? t('since', { date: dateText(created) }) : t('allTime');
   $('updated').textContent = t('updated', { t: timeText(lastUpdate) });
 }
 
@@ -370,7 +421,12 @@ function appCard(a) {
   if (!dls.length) dls = all;
 
   const actions = el('div', { class: 'app-actions' });
-  let imp = typeof a.import_url === 'string' ? a.import_url.replace('{url}', subUrl) : '';
+  let imp = typeof a.import_url === 'string'
+    ? a.import_url
+      .replace('{url_enc}', encodeURIComponent(subUrl))
+      .replace('{url}', subUrl)
+      .replace('{name}', encodeURIComponent((user && user.username) || 'sub'))
+    : '';
   imp = safeUrl(imp, false);
   if (imp) {
     actions.append(el('a', { class: 'btn small primary', href: imp, rel: 'noopener noreferrer' },
@@ -429,22 +485,40 @@ function b64utf8(s) {
 function describe(link) {
   const proto = link.slice(0, link.indexOf('://')).toLowerCase();
   let name = '';
+  let host = '';
+  let port = '';
+  const tags = [];
   if (proto === 'vmess') {
-    try { name = JSON.parse(b64utf8(link.slice(8).split('#')[0])).ps || ''; } catch { /* not base64 json */ }
+    try {
+      const j = JSON.parse(b64utf8(link.slice(8).split('#')[0]));
+      name = j.ps || '';
+      host = j.add || '';
+      port = j.port || '';
+      if (j.net) tags.push(String(j.net));
+      if (j.tls && j.tls !== 'none') tags.push(String(j.tls));
+    } catch { /* not base64 json */ }
   }
-  if (!name) {
-    const hash = link.indexOf('#');
-    if (hash >= 0) {
-      const raw = link.slice(hash + 1);
-      try { name = decodeURIComponent(raw); } catch { name = raw; }
-    }
+  const hash = link.indexOf('#');
+  if (!name && hash >= 0) {
+    const raw = link.slice(hash + 1);
+    try { name = decodeURIComponent(raw); } catch { name = raw; }
   }
-  if (!name) {
-    const m = link.match(/@([^:/?#]+)/);
-    name = m ? m[1] : proto.toUpperCase();
+  const body = hash >= 0 ? link.slice(0, hash) : link;
+  if (!host) {
+    const m = body.match(/@(\[[^\]]+\]|[^:/?#]+)(?::(\d+))?/);
+    if (m) { host = m[1]; port = m[2] || ''; }
   }
+  const q = body.indexOf('?');
+  if (q >= 0 && !tags.length) {
+    const params = new URLSearchParams(body.slice(q + 1));
+    const type = params.get('type');
+    const sec = params.get('security');
+    if (type) tags.push(type);
+    if (sec && sec !== 'none') tags.push(sec);
+  }
+  if (!name) name = host || proto.toUpperCase();
   const label = { shadowsocks: 'ss', hysteria2: 'hy2', wireguard: 'wg' }[proto] || proto;
-  return { proto, label, name: name.trim() };
+  return { proto, label, name: name.trim(), addr: host ? (port ? `${host}:${port}` : host) : '', tags: tags.slice(0, 2) };
 }
 
 const LINKS_COLLAPSED = 5;
@@ -463,7 +537,11 @@ function renderLinks() {
     copyBtn.addEventListener('click', () => copy(link, copyBtn));
     list.append(el('div', { class: 'link' },
       el('span', { class: `proto p-${info.proto}`, text: info.label }),
-      el('span', { class: 'link-name', text: info.name, dir: 'auto' }),
+      el('div', { class: 'link-body' },
+        el('span', { class: 'link-name', text: info.name, dir: 'auto' }),
+        el('span', { class: 'link-meta', dir: 'ltr' },
+          info.addr ? el('span', { class: 'addr', text: info.addr }) : null,
+          ...info.tags.map((tag) => el('em', { text: tag })))),
       el('div', { class: 'link-actions' },
         copyBtn,
         el('button', { class: 'icon-btn', type: 'button', icon: 'qr', 'aria-label': t('qr'), onclick: () => openQr(info.name, link) }))));
@@ -475,9 +553,9 @@ function renderLinks() {
 
 /* ---------- usage chart ---------- */
 const RANGES = {
-  '24h': { ms: 24 * 3600e3, period: 'hour' },
-  '7d': { ms: 7 * 86400e3, period: 'day' },
-  '30d': { ms: 30 * 86400e3, period: 'day' },
+  '24h': { count: 24, period: 'hour', step: 3600e3 },
+  '7d': { count: 7, period: 'day', step: 86400e3 },
+  '30d': { count: 30, period: 'day', step: 86400e3 },
 };
 
 function renderRangeTabs() {
@@ -498,63 +576,97 @@ function pointLabel(d, period) {
   return new Intl.DateTimeFormat(locale(), { month: 'short', day: 'numeric' }).format(d);
 }
 
-function drawUsage(points, period) {
+const bucketKey = (d, period) =>
+  `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}${period === 'hour' ? `-${d.getHours()}` : ''}`;
+
+// Always returns one slot per hour/day of the range, so a single data point never fills the chart.
+function toBuckets(raw, cfg) {
+  const now = new Date();
+  const end = cfg.period === 'hour'
+    ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours())
+    : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const slots = [];
+  const index = new Map();
+  for (let i = cfg.count - 1; i >= 0; i--) {
+    const d = new Date(end);
+    if (cfg.period === 'hour') d.setHours(d.getHours() - i);
+    else d.setDate(d.getDate() - i);
+    const slot = { d, v: 0 };
+    index.set(bucketKey(d, cfg.period), slot);
+    slots.push(slot);
+  }
+  for (const p of raw) {
+    const slot = index.get(bucketKey(p.d, cfg.period));
+    if (slot) slot.v += p.v;
+    else if (p.d < slots[0].d) slots[0].v += p.v;
+    else slots[slots.length - 1].v += p.v;
+  }
+  return slots;
+}
+
+function drawUsage(points, cfg) {
   const chart = $('chart');
   const axis = $('chart-axis');
+  const grid = $('chart-grid');
   chart.textContent = '';
   axis.textContent = '';
+  grid.textContent = '';
+  const setKpis = (a, b, c) => { $('k-total').textContent = a; $('k-avg').textContent = b; $('k-peak').textContent = c; };
   if (points === 'loading') {
     chart.append(el('p', { class: 'chart-msg', text: t('loading') }));
-    $('usage-total').textContent = '—';
+    setKpis('—', '—', '—');
     return;
   }
   const total = (points || []).reduce((s, p) => s + p.v, 0);
-  $('usage-total').textContent = bytesText(total);
   if (!points || !points.length || total <= 0) {
     chart.append(el('p', { class: 'chart-msg', text: t('noData') }));
+    setKpis(bytesText(0), '—', '—');
     return;
   }
   const max = Math.max(...points.map((p) => p.v));
+  setKpis(bytesText(total), bytesText(total / points.length), bytesText(max));
+  for (const frac of [1, 0.5]) {
+    grid.append(el('div', { class: 'grid-line', style: `bottom:${frac * 100}%` },
+      el('span', { text: bytesText(max * frac) })));
+  }
+  chart.setAttribute('data-n', points.length);
   for (const p of points) {
-    const bar = el('div', { class: 'bar', tabindex: '0' },
-      el('i', { style: `height:${Math.max(p.v > 0 ? 3 : 0, (p.v / max) * 100)}%` }),
+    chart.append(el('div', { class: `bar${p.v === max ? ' peak' : ''}`, tabindex: '0' },
+      el('i', { style: `height:${p.v > 0 ? Math.max(2.500, (p.v / max) * 100) : 0}%` }),
       el('span', { class: 'tip' },
         el('b', { text: bytesText(p.v) }),
-        el('em', { text: pointLabel(p.d, period) })));
-    chart.append(bar);
+        el('em', { text: pointLabel(p.d, cfg.period) }))));
   }
-  const picks = points.length > 2
-    ? [points[0], points[Math.floor(points.length / 2)], points[points.length - 1]]
-    : points;
-  for (const p of picks) axis.append(el('span', { text: pointLabel(p.d, period) }));
+  const n = points.length;
+  const picks = [0, Math.floor((n - 1) / 3), Math.floor(((n - 1) * 2) / 3), n - 1];
+  for (const i of [...new Set(picks)]) axis.append(el('span', { text: pointLabel(points[i].d, cfg.period) }));
 }
 
 async function loadUsage() {
   const cfg = RANGES[range];
   const key = range;
-  if (usageCache[key]) { drawUsage(usageCache[key], cfg.period); return; }
+  if (usageCache[key]) { drawUsage(usageCache[key], cfg); return; }
   drawUsage('loading');
   let points = [];
   try {
-    const start = new Date(Date.now() - cfg.ms).toISOString();
+    const start = new Date(Date.now() - cfg.count * cfg.step).toISOString();
     const res = await fetch(`${subUrl}/usage?start=${encodeURIComponent(start)}&period=${cfg.period}`);
     if (!res.ok) throw new Error(res.status);
     const body = await res.json();
-    const merged = new Map();
+    const raw = [];
     const stats = body && body.stats;
     const series = Array.isArray(stats) ? [stats] : stats && typeof stats === 'object' ? Object.values(stats) : [];
     for (const list of series) {
       for (const p of list || []) {
         const d = toDate(p && p.period_start);
-        if (!d) continue;
-        merged.set(d.getTime(), (merged.get(d.getTime()) || 0) + (Number(p.total_traffic) || 0));
+        if (d) raw.push({ d, v: Number(p.total_traffic) || 0 });
       }
     }
-    points = [...merged.entries()].sort((a, b) => a[0] - b[0]).map(([ts, v]) => ({ d: new Date(ts), v }));
+    points = toBuckets(raw, cfg);
     usageCache[key] = points;
     setTimeout(() => { delete usageCache[key]; }, 60000);
   } catch { /* the chart simply shows "no data" */ }
-  if (key === range) drawUsage(points, cfg.period);
+  if (key === range) drawUsage(points, cfg);
 }
 
 /* ---------- live refresh ---------- */
@@ -603,6 +715,7 @@ function renderAll() {
   root.dir = LANGS[lang].dir;
   document.querySelectorAll('[data-i18n]').forEach((n) => { n.textContent = t(n.getAttribute('data-i18n')); });
   $('btn-lang').setAttribute('aria-label', t('language'));
+  $('btn-refresh').setAttribute('aria-label', t('refresh'));
   $('modal-close').setAttribute('aria-label', t('close'));
   applyTheme();
   renderLangMenu();
@@ -612,7 +725,7 @@ function renderAll() {
   renderApps();
   renderLinks();
   renderRangeTabs();
-  drawUsage(usageCache[range] || [], RANGES[range].period);
+  drawUsage(usageCache[range] || [], RANGES[range]);
 }
 
 /* ---------- wire up ---------- */
@@ -622,6 +735,13 @@ $('btn-theme').addEventListener('click', () => {
   theme = theme === 'dark' ? 'light' : 'dark';
   store.set('sub.theme', theme);
   applyTheme();
+});
+$('btn-refresh').addEventListener('click', async () => {
+  const btn = $('btn-refresh');
+  btn.classList.add('spin');
+  for (const k of Object.keys(usageCache)) delete usageCache[k];
+  await Promise.all([refresh(), loadUsage()]);
+  setTimeout(() => btn.classList.remove('spin'), 500);
 });
 $('btn-lang').addEventListener('click', (e) => {
   e.stopPropagation();
