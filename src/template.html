@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-default-lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="dark light">
+<title>{{ user.username if user else 'Subscription' }}</title>
+<style>{% raw %}/*__CSS__*/{% endraw %}</style>
+</head>
+<body>
+<div class="backdrop" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<main class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="logo" data-icon="shield"></span>
+      <span data-i18n="brand"></span>
+    </div>
+    <div class="top-actions">
+      <div class="menu-host">
+        <button class="icon-btn" id="btn-lang" type="button" data-icon="globe" aria-haspopup="true"></button>
+        <div class="menu" id="lang-menu" hidden></div>
+      </div>
+      <button class="icon-btn" id="btn-theme" type="button"></button>
+    </div>
+  </header>
+
+  <section class="card announce" id="announce" hidden>
+    <span class="announce-icon" data-icon="bell"></span>
+    <div class="announce-body">
+      <p id="announce-text" dir="auto"></p>
+      <a id="announce-link" target="_blank" rel="noopener noreferrer" hidden data-i18n="more"></a>
+    </div>
+  </section>
+
+  <section class="card hero" id="hero">
+    <div class="hero-head">
+      <div class="who">
+        <span class="hello" data-i18n="account"></span>
+        <h1 id="username">—</h1>
+      </div>
+      <div class="chips">
+        <span class="chip status" id="status"></span>
+        <span class="chip ghost" id="online" hidden></span>
+      </div>
+    </div>
+
+    <div class="hero-main">
+      <div class="gauge">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="g-ring" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="var(--acc1)"/>
+              <stop offset="1" stop-color="var(--acc2)"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-track" cx="60" cy="60" r="52"/>
+          <circle class="ring-value" id="ring" cx="60" cy="60" r="52"/>
+        </svg>
+        <div class="gauge-center">
+          <span class="gauge-label" id="gauge-label"></span>
+          <strong id="gauge-value">—</strong>
+          <span class="gauge-unit" id="gauge-unit"></span>
+        </div>
+      </div>
+
+      <div class="tiles">
+        <div class="tile">
+          <span class="tile-k" data-i18n="used"></span>
+          <span class="tile-v" id="t-used">—</span>
+          <span class="tile-s" id="t-used-sub"></span>
+        </div>
+        <div class="tile">
+          <span class="tile-k" id="t-exp-k"></span>
+          <span class="tile-v" id="t-exp">—</span>
+          <span class="tile-s" id="t-exp-sub"></span>
+        </div>
+        <div class="tile">
+          <span class="tile-k" data-i18n="reset"></span>
+          <span class="tile-v" id="t-reset">—</span>
+        </div>
+        <div class="tile">
+          <span class="tile-k" data-i18n="lifetime"></span>
+          <span class="tile-v" id="t-life">—</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="sec-sub">
+    <div class="card-head">
+      <h2 data-i18n="subLink"></h2>
+    </div>
+    <p class="hint" data-i18n="subHint"></p>
+    <div class="urlbox">
+      <code id="sub-url" dir="ltr"></code>
+    </div>
+    <div class="row-btns">
+      <button class="btn primary" id="sub-copy" type="button"><span data-icon="copy"></span><span data-i18n="copyLink"></span></button>
+      <button class="btn" id="sub-qr" type="button"><span data-icon="qr"></span><span data-i18n="qr"></span></button>
+    </div>
+  </section>
+
+  <section class="card" id="sec-apps" hidden>
+    <div class="card-head">
+      <h2 data-i18n="apps"></h2>
+    </div>
+    <p class="hint" data-i18n="appsHint"></p>
+    <div class="tabs" id="app-tabs"></div>
+    <div class="apps" id="app-list"></div>
+  </section>
+
+  <section class="card" id="sec-links" hidden>
+    <div class="card-head">
+      <h2><span data-i18n="configs"></span> <span class="count" id="links-count"></span></h2>
+      <button class="btn small" id="links-copy-all" type="button"><span data-icon="copy"></span><span data-i18n="copyAll"></span></button>
+    </div>
+    <div class="links" id="link-list"></div>
+    <button class="btn block ghost" id="links-more" type="button" hidden></button>
+  </section>
+
+  <section class="card" id="sec-usage">
+    <div class="card-head">
+      <h2 data-i18n="usage"></h2>
+      <div class="seg" id="range"></div>
+    </div>
+    <div class="usage-total"><span data-i18n="usageTotal"></span> <strong id="usage-total">—</strong></div>
+    <div class="chart" id="chart"></div>
+    <div class="chart-axis" id="chart-axis"></div>
+  </section>
+
+  <footer class="foot">
+    <a class="btn" id="support" target="_blank" rel="noopener noreferrer" hidden><span data-icon="chat"></span><span data-i18n="support"></span></a>
+    <span class="foot-note" id="updated"></span>
+  </footer>
+</main>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h3 id="modal-title"></h3>
+      <button class="icon-btn" id="modal-close" type="button" data-icon="x"></button>
+    </div>
+    <div class="qr" id="qr"></div>
+    <code class="modal-text" id="modal-text" dir="ltr"></code>
+    <button class="btn primary block" id="modal-copy" type="button"><span data-icon="copy"></span><span data-i18n="copy"></span></button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+window.__SUB__ = {
+  user: {% if user %}{% set u = {
+    'username': user.username,
+    'status': (user.status.name if user.status.name is defined else user.status)|string,
+    'used_traffic': user.used_traffic,
+    'lifetime_used_traffic': user.lifetime_used_traffic,
+    'data_limit': user.data_limit,
+    'data_limit_reset_strategy': (user.data_limit_reset_strategy.name if user.data_limit_reset_strategy.name is defined else user.data_limit_reset_strategy)|string,
+    'expire': (user.expire.isoformat() if user.expire.isoformat is defined else user.expire) if user.expire else None,
+    'on_hold_expire_duration': user.on_hold_expire_duration,
+    'on_hold_timeout': (user.on_hold_timeout.isoformat() if user.on_hold_timeout.isoformat is defined else user.on_hold_timeout) if user.on_hold_timeout else None,
+    'created_at': (user.created_at.isoformat() if user.created_at.isoformat is defined else user.created_at) if user.created_at else None,
+    'online_at': (user.online_at.isoformat() if user.online_at.isoformat is defined else user.online_at) if user.online_at else None
+  } %}{{ u | tojson | safe }}{% else %}null{% endif %},
+  links: {% if links %}{{ links | list | tojson | safe }}{% else %}[]{% endif %},
+  apps: {% if apps %}{% set out = [] %}{% for a in apps %}{% if a %}{% set dls = [] %}{% for d in a.download_links %}{% if d %}{% set _ = dls.append({'name': d.name, 'url': d.url, 'language': d.language|string}) %}{% endif %}{% endfor %}{% set _ = out.append({
+    'name': a.name,
+    'icon_url': a.icon_url,
+    'import_url': a.import_url,
+    'description': a.description,
+    'recommended': a.recommended,
+    'platform': a.platform|string,
+    'download_links': dls
+  }) %}{% endif %}{% endfor %}{{ out | tojson | safe }}{% else %}null{% endif %}
+};
+</script>
+<script>{% raw %}/*__JS__*/{% endraw %}</script>
+</body>
+</html>

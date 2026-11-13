@@ -1,0 +1,15 @@
+{
+  "name": "subscription-template",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Single-file subscription page template for PasarGuard",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "qrcode-generator": "^2.0.4",
+    "vazirmatn": "^33.0.3"
+  }
+}
